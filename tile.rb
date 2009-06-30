@@ -116,18 +116,17 @@ def LoadGLTextures
     #load both texture
     image0 = Image.new
     image1 = Image.new
-    if !ImageLoad("tile1.bmp", image0)
+    if !ImageLoad("tile2.bmp", image0)
 	exit(1)
     end
-    if !ImageLoad("tile2.bmp", image1)
+    if !ImageLoad("tile1.bmp", image1)
 	exit(1)
     end
 
     # Create Texture
     # The ruby-opengl don't have yet GenTextures like in the standard
     # The solution is 2 calls to GenTextures by the moment.
-    glGenTextures($texture[0])
-    glGenTextures($texture[1])
+    $texture = glGenTextures(2)
 
     # Texture 0
     glBindTexture(GL_TEXTURE_2D, $texture[0])
@@ -183,7 +182,7 @@ end
 
 # The function called when our window is resized (which shouldn't happen, 
 # because we're fullscreen) 
-ReSizeGLScene = Proc.new {|width, height|
+ReSizeGLScene = lambda {|width, height|
     if (height==0) # Prevent A Divide By Zero If The Window Is Too Small
 	height=1
     end
@@ -199,7 +198,7 @@ ReSizeGLScene = Proc.new {|width, height|
 #-----------------------------------------------------------
 
 # The main drawing function. 
-DrawGLScene = Proc.new {
+DrawGLScene = lambda {
     # I don't know why I have to put this in the draw event
     # this is only a problem with ruby-opengl. The original
     # program in C don't need it.
@@ -224,7 +223,7 @@ DrawGLScene = Proc.new {
 	for x in (0...MAP_SIZEX) do
 	    tile = $map[y][x]
 	    
-	    glBindTexture(GL_TEXTURE_2D, $texture[1])
+	    glBindTexture(GL_TEXTURE_2D, $texture[tile])
 
 	    # Tile itself
 	    glBegin(GL_QUADS)
@@ -254,7 +253,7 @@ DrawGLScene = Proc.new {
 #-----------------------------------------------------------
 
 # The function called whenever a key is pressed.
-keyPressed = Proc.new {|key, x, y| 
+keyPressed = lambda {|key, x, y| 
 
   case key
   when 27  # If escape is pressed, kill everything. 
@@ -268,7 +267,7 @@ keyPressed = Proc.new {|key, x, y|
 #-----------------------------------------------------------
 
 # The function called whenever a special key is pressed
-specialKeyPressed = Proc.new {|key,x,y|
+specialKeyPressed = lambda {|key,x,y|
   case key
   when GLUT_KEY_UP
   when GLUT_KEY_DOWN
