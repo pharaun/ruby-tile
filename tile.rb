@@ -216,7 +216,8 @@ DrawGLScene = lambda {
     glLoadIdentity()                       # Reset The View
 
     # Camera
-    gluLookAt(10.0, 8.0, 20.0, 10.0, 8.0, 0.0, 0.0, 1.0, 0.0)
+    #gluLookAt(10.0, 8.0, 20.0, 10.0, 8.0, 0.0, 0.0, 1.0, 0.0)
+    gluLookAt($x, $y, $z, $tx, $ty, $tz, 0.0, 1.0, 0.0)
 
     # Tile rendering
     for y in (0...MAP_SIZEY) do
@@ -266,14 +267,56 @@ keyPressed = lambda {|key, x, y|
 
 #-----------------------------------------------------------
 
+$x = 10.0
+$y = 8.0
+$z = 20.0
+    
+$tx = 10.0
+$ty = 8.0
+$tz = 0.0
+
 # The function called whenever a special key is pressed
 specialKeyPressed = lambda {|key,x,y|
-  case key
-  when GLUT_KEY_UP
-  when GLUT_KEY_DOWN
-  when GLUT_KEY_LEFT
-  when GLUT_KEY_RIGHT
-  end
+    mod = glutGetModifiers()
+
+    case key
+	when GLUT_KEY_UP
+	    if mod == GLUT_ACTIVE_SHIFT
+		$tx += 1
+	    else
+		$x += 1
+	    end
+	when GLUT_KEY_DOWN
+	    if mod == GLUT_ACTIVE_SHIFT
+		$tx -= 1
+	    else
+		$x -= 1
+	    end
+	when GLUT_KEY_LEFT
+	    if mod == GLUT_ACTIVE_SHIFT
+		$ty += 1
+	    else
+		$y += 1
+	    end
+	when GLUT_KEY_RIGHT
+	    if mod == GLUT_ACTIVE_SHIFT
+		$ty -= 1
+	    else
+		$y -= 1
+	    end
+	when GLUT_KEY_PAGE_UP
+	    if mod == GLUT_ACTIVE_SHIFT
+		$tz += 1
+	    else
+		$z += 1
+	    end
+	when GLUT_KEY_PAGE_DOWN
+	    if mod == GLUT_ACTIVE_SHIFT
+		$tz -= 1
+	    else
+		$z -= 1
+	    end
+    end
 }
 
 
