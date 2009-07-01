@@ -169,12 +169,8 @@ def LoadGLTextures
     #load both texture
     image0 = Image.new
     image1 = Image.new
-    if !ImageLoad("tile2.bmp", image0)
-	exit(1)
-    end
-    if !ImageLoad("tile1.bmp", image1)
-	exit(1)
-    end
+    exit(1) unless ImageLoad("tile2.bmp", image0)
+    exit(1) unless ImageLoad("tile1.bmp", image1)
 
     # Create Texture
     # The ruby-opengl don't have yet GenTextures like in the standard
