@@ -5,6 +5,21 @@
 require "opengl"
 include Gl,Glu,Glut
 
+# Which type of Engine
+HEXAGON_TILE = true
+
+# Direction of Hexagon rendering
+HEXAGON_VERT = true
+
+# Define step for hexagon
+HEX_STEP = (2.0 * Math::PI/6.0)
+
+# Hexagon specifications
+HEX_SIZE = 1.0
+HEX_RADIUS = HEX_SIZE/2
+HEX_HEIGHT = HEX_SIZE * Math.cos(HEX_STEP/2.0)
+HEX_SIDE = HEX_SIZE * Math.sin(HEX_STEP/2.0)
+
 # Define Max map
 MAP_SIZEX = 10
 MAP_SIZEY = 10
@@ -28,6 +43,8 @@ $map = [
 #Define the struct image
 Image=Struct.new("Image", :sizeX, :sizeY, :data)
 
+
+#-----------------------------------------------------------
 def Fps
     # FPS
     if ($frame.nil? or $frame >= 1000)
@@ -42,6 +59,42 @@ def Fps
     else
 	$frame += 1
     end
+end
+
+
+#-----------------------------------------------------------
+def Render_Hexagon(p_x, p_y)
+    angle = 0.0
+
+    if HEXAGON_VERT
+	tile_x = p_x * HEX_SIDE * 1.5
+	tile_y = p_y * HEX_HEIGHT + (p_x % 2) * HEX_HEIGHT / 2.0
+    else
+	# Calc the spacing for horz spacing and redo the hexagon
+	# polygon stuff below also
+    end
+		    
+    glBegin(GL_TRIANGLE_FAN)
+	glTexCoord2f(0.5, 0.5)
+	#glVertex3f(0.0, 0.0, 0.0)
+	glVertex3f(tile_x, tile_y, 0.0)
+
+	for num_vertices in (0...6) do
+	    x = Math.cos(angle)
+	    y = Math.sin(angle)
+
+	    angle += HEX_STEP
+
+	    glTexCoord2f((x+1)/2.0, (y+1)/2.0)
+	    #glVertex3f(HEX_RADIUS * x, HEX_RADIUS * y, 0.0)
+	    glVertex3f(tile_x + HEX_RADIUS * x, tile_y + HEX_RADIUS * y, 0.0)
+	end
+
+	# Close the fan
+	glTexCoord2f(1.0, 0.5)
+	#glVertex3f(HEX_RADIUS, 0.0, 0.0)
+	glVertex3f(tile_x + HEX_RADIUS, tile_y, 0.0)
+    glEnd()
 end
 
 #-----------------------------------------------------------
@@ -228,20 +281,25 @@ DrawGLScene = lambda {
 	    
 	    glBindTexture(GL_TEXTURE_2D, $texture[tile])
 
-	    # Tile itself
-	    glBegin(GL_QUADS)
-		glTexCoord2f(0.0, 0.0)
-		glVertex3f(x, y, 0.0)
-		
-		glTexCoord2f(1.0, 0.0)
-		glVertex3f(x + 1, y, 0.0)
-		
-		glTexCoord2f(1.0, 1.0)
-		glVertex3f(x + 1, y + 1, 0.0)
-		
-		glTexCoord2f(0.0, 1.0)
-		glVertex3f(x, y + 1, 0.0)
-	    glEnd()
+	    if HEXAGON_TILE
+		# Hexagon Tile itself
+		Render_Hexagon(x,y)
+	    else
+		# Square Tile itself
+		glBegin(GL_QUADS)
+		    glTexCoord2f(0.0, 0.0)
+		    glVertex3f(x, y, 0.0)
+		    
+		    glTexCoord2f(1.0, 0.0)
+		    glVertex3f(x + 1, y, 0.0)
+		    
+		    glTexCoord2f(1.0, 1.0)
+		    glVertex3f(x + 1, y + 1, 0.0)
+		    
+		    glTexCoord2f(0.0, 1.0)
+		    glVertex3f(x, y + 1, 0.0)
+		glEnd()
+	    end
 	end
     end
 
@@ -271,7 +329,7 @@ keyPressed = lambda {|key, x, y|
 
 $x = 0.0
 $y = 0.0
-$z = 0.0
+$z = -5.0
 
 $rotx = 0.0
 $roty = 0.0
