@@ -1,24 +1,25 @@
 #!/bin/env ruby
-# This code was created by Jeff Molofee '99 
-# Conversion to Ruby by Manolo Padron Martinez (manolopm@cip.es)
+# This code was created by Anja Berens 2009 with credits to
+#   Jeff Molofee '99
+#   Manolo Padron Martinez - Ruby port
 
 require "opengl"
 include Gl,Glu,Glut
 
-# Which type of Engine
+# Which type of Engine, true for hexagon based, and false for tile based
 HEXAGON_TILE = true
 
-# Direction of Hexagon rendering
+# Direction of Hexagon rendering, true for vertical hexagon tiles, and false for horzional
 HEXAGON_VERT = false
 
 # Define step for hexagon
-HEX_STEP = (2.0 * Math::PI/6.0)
+HEXAGON_STEP = (2.0 * Math::PI/6.0)
 
 # Hexagon specifications
-HEX_SIZE = 1.0
-HEX_RADIUS = HEX_SIZE/2
-HEX_HEIGHT = HEX_SIZE * Math.cos(HEX_STEP/2.0)
-HEX_SIDE = HEX_SIZE * Math.sin(HEX_STEP/2.0)
+HEXAGON_SIZE = 1.0
+HEXAGON_RADIUS = HEXAGON_SIZE/2
+HEXAGON_HEIGHT = HEXAGON_SIZE * Math.cos(HEXAGON_STEP/2.0)
+HEXAGON_SIDE = HEXAGON_SIZE * Math.sin(HEXAGON_STEP/2.0)
 
 # Define Max map
 MAP_SIZEX = 10
@@ -40,7 +41,17 @@ $map = [
 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ]
 
-#Define the struct image
+# Default position of the camera
+$x = 0.0
+$y = 0.0
+$z = -5.0
+
+# Default Rotation of the Camera
+$rotx = 0.0
+$roty = 0.0
+$rotz = 0.0
+
+# Define the struct image
 Image=Struct.new("Image", :sizeX, :sizeY, :data)
 
 
@@ -48,14 +59,10 @@ Image=Struct.new("Image", :sizeX, :sizeY, :data)
 def Fps
     # FPS
     if ($frame.nil? or $frame >= 1000)
-	if ($start_time.nil?)
-	    $frame = 0
-	    $start_time = Time.now
-	else
-	    puts "FPS: #{$frame / (Time.now - $start_time)}"
-	    $frame = 0
-	    $start_time = Time.now
-	end
+	puts "FPS: #{$frame / (Time.now - $start_time)}" unless $start_time.nil?
+
+	$frame = 0
+	$start_time = Time.now
     else
 	$frame += 1
     end
@@ -67,43 +74,60 @@ def Render_Hexagon(p_x, p_y)
 
     if HEXAGON_VERT
 	angle = 0.0
-	tile_x = p_x * HEX_SIDE * 1.5
-	tile_y = p_y * HEX_HEIGHT + (p_x % 2) * HEX_HEIGHT / 2.0
+
+	tile_x = p_x * HEXAGON_SIDE * 1.5
+	tile_y = p_y * HEXAGON_HEIGHT + (p_x % 2) * HEXAGON_HEIGHT / 2.0
     else
-	angle = HEX_STEP * 1.5
-	tile_x = p_x * HEX_HEIGHT + (p_y % 2) * HEX_HEIGHT / 2.0
-	tile_y = p_y * HEX_SIDE * 1.5
+	# The hexagon is rotated till the final vertix is at the top, to simpfy its placement
+	angle = HEXAGON_STEP * 1.5
+	
+	tile_x = p_x * HEXAGON_HEIGHT + (p_y % 2) * HEXAGON_HEIGHT / 2.0
+	tile_y = p_y * HEXAGON_SIDE * 1.5
     end
 		    
     glBegin(GL_TRIANGLE_FAN)
 	glTexCoord2f(0.5, 0.5)
-	#glVertex3f(0.0, 0.0, 0.0)
 	glVertex3f(tile_x, tile_y, 0.0)
 
 	for num_vertices in (0...6) do
 	    x = Math.cos(angle)
 	    y = Math.sin(angle)
 
-	    angle += HEX_STEP
+	    angle += HEXAGON_STEP
 
 	    glTexCoord2f((x+1)/2.0, (y+1)/2.0)
-	    #glVertex3f(HEX_RADIUS * x, HEX_RADIUS * y, 0.0)
-	    glVertex3f(tile_x + HEX_RADIUS * x, tile_y + HEX_RADIUS * y, 0.0)
+	    glVertex3f(tile_x + HEXAGON_RADIUS * x, tile_y + HEXAGON_RADIUS * y, 0.0)
 	end
 
+	# Close the fan
 	if HEXAGON_VERT
-	    # Close the fan
 	    glTexCoord2f(1.0, 0.5)
-	    #glVertex3f(HEX_RADIUS, 0.0, 0.0)
-	    glVertex3f(tile_x + HEX_RADIUS, tile_y, 0.0)
+	    glVertex3f(tile_x + HEXAGON_RADIUS, tile_y, 0.0)
 	else
-	    # Close the fan
 	    glTexCoord2f(0.5, 1.0)
-	    #glVertex3f(HEX_RADIUS, 0.0, 0.0)
-	    glVertex3f(tile_x, tile_y + HEX_RADIUS, 0.0)
+	    glVertex3f(tile_x, tile_y + HEXAGON_RADIUS, 0.0)
 	end
     glEnd()
 end
+
+
+#-----------------------------------------------------------
+def Render_Square(p_x, p_y)
+    glBegin(GL_QUADS)
+	glTexCoord2f(0.0, 0.0)
+	glVertex3f(p_x, p_y, 0.0)
+
+	glTexCoord2f(1.0, 0.0)
+	glVertex3f(p_x + 1, p_y, 0.0)
+
+	glTexCoord2f(1.0, 1.0)
+	glVertex3f(p_x + 1, p_y + 1, 0.0)
+
+	glTexCoord2f(0.0, 1.0)
+	glVertex3f(p_x, p_y + 1, 0.0)
+    glEnd()
+end
+
 
 #-----------------------------------------------------------
 # quick and dirty bitmap loader... for 24 bit bitmaps with 1 plane only.
@@ -172,7 +196,6 @@ end
 
 
 #-----------------------------------------------------------
-
 def LoadGLTextures
     #load both texture
     image0 = Image.new
@@ -181,8 +204,6 @@ def LoadGLTextures
     exit(1) unless ImageLoad("tile1.bmp", image1)
 
     # Create Texture
-    # The ruby-opengl don't have yet GenTextures like in the standard
-    # The solution is 2 calls to GenTextures by the moment.
     $texture = glGenTextures(2)
 
     # Texture 0
@@ -190,7 +211,7 @@ def LoadGLTextures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     
-    # 2D texture, level of detail 0(normal, 3 components(red,green,blue)
+    # 2D texture, level of detail 0(normal), 3 components(red,green,blue)
     # x size from image, y size from image, border 0 (normal), rgb format,
     # format of the data, and finally the data itself
     glTexImage2D(GL_TEXTURE_2D, 0, 3, image0[:sizeX],
@@ -202,7 +223,7 @@ def LoadGLTextures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
     
-    # 2D texture, level of detail 0(normal, 3 components(red,green,blue)
+    # 2D texture, level of detail 0(normal), 3 components(red,green,blue)
     # x size from image, y size from image, border 0 (normal), rgb format,
     # format of the data, and finally the data itself
     glTexImage2D(GL_TEXTURE_2D, 0, 3, image1[:sizeX],
@@ -212,39 +233,43 @@ end
 
 
 #-----------------------------------------------------------
+# We call this right after our OpenGL window is created.
+def InitGL(width, height)
+    # Load the textures
+    LoadGLTextures()
 
-def InitGL(width, height) # We call this right after our OpenGL window 
-			    # is created.
-    LoadGLTextures()                  # Load the texture(s)
-    glEnable(GL_TEXTURE_2D)          # Enable texture mapping
-    glClearColor(0.0, 0.0, 0.0, 0.0) # This Will Clear The Background 
-    # Color To Black
-    glClearDepth(1.0)                # Enables Clearing Of The Depth Buffer
+    # Enable Texture mapping
+    glEnable(GL_TEXTURE_2D)
 
-    glShadeModel(GL_SMOOTH)         # Enables Smooth Color Shading
+    # Clear the background to black
+    glClearColor(0.0, 0.0, 0.0, 0.0)
+
+    # Enable clearing of the depth buffer
+    glClearDepth(1.0)
+
+    # Enable smoothing and color shading
+    glShadeModel(GL_SMOOTH)
+
+    # Reset the Projection Matrix
     glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()                 # Reset The Projection Matrix
-    gluPerspective(45.0,Float(width)/Float(height),0.1,100.0) # Calculate The 
-    # Aspect Ratio 
-    # Of The Window
-    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
 
-    #Setup blending
-    #glBlendFunc(GL_SRC_ALPHA,GL_ONE) #Set the blending Function for translucency
-    #glEnable(GL_BLEND)
+    # Calculate the aspect ratio of the window
+    gluPerspective(45.0,Float(width)/Float(height),0.1,100.0)
+
+    # Reset back to the model Matrix
+    glMatrixMode(GL_MODELVIEW)
 end
 
 
 #-----------------------------------------------------------
-
-# The function called when our window is resized (which shouldn't happen, 
-# because we're fullscreen) 
+# The function called when our window is resized
 ReSizeGLScene = lambda {|width, height|
-    if (height==0) # Prevent A Divide By Zero If The Window Is Too Small
-	height=1
-    end
-    glViewport(0,0,width,height) # Reset The Current Viewport And
-    # Perspective Transformation
+    height = 1 if height == 0
+
+    # Resets the current Viewport and Prespective Transformation
+    glViewport(0,0,width,height)
+
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(45.0,Float(width)/Float(height),0.1,100.0)
@@ -253,13 +278,14 @@ ReSizeGLScene = lambda {|width, height|
 
 
 #-----------------------------------------------------------
-
 # The main drawing function. 
 DrawGLScene = lambda {
     # I don't know why I have to put this in the draw event
     # this is only a problem with ruby-opengl. The original
     # program in C don't need it.
     glMatrixMode(GL_MODELVIEW)
+
+    # Set up the Lighting
     lightAmbient=[0.5,0.5,0.5,1.0]
     #lightDiffuse=[1.0,1.0,1.0,1.0]
     #lightPosition=[0.0,0.0,2.0,1.0]
@@ -268,10 +294,13 @@ DrawGLScene = lambda {
     #glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
     glEnable(GL_LIGHT0)
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear The Screen And
-    # The Depth Buffer
-    glLoadIdentity()                       # Reset The View
+    # Clear the Screen and the Depth Buffer
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+    # Reset the view
+    glLoadIdentity()
+
+    # Move the camera to the current position as indicated by the user
     glRotate($rotx, 1, 0, 0);
     glRotate($roty, 0, 1, 0);
     glRotate($rotz, 0, 0, 1);
@@ -286,23 +315,9 @@ DrawGLScene = lambda {
 	    glBindTexture(GL_TEXTURE_2D, $texture[tile])
 
 	    if HEXAGON_TILE
-		# Hexagon Tile itself
 		Render_Hexagon(x,y)
 	    else
-		# Square Tile itself
-		glBegin(GL_QUADS)
-		    glTexCoord2f(0.0, 0.0)
-		    glVertex3f(x, y, 0.0)
-		    
-		    glTexCoord2f(1.0, 0.0)
-		    glVertex3f(x + 1, y, 0.0)
-		    
-		    glTexCoord2f(1.0, 1.0)
-		    glVertex3f(x + 1, y + 1, 0.0)
-		    
-		    glTexCoord2f(0.0, 1.0)
-		    glVertex3f(x, y + 1, 0.0)
-		glEnd()
+		Render_Square(x,y)
 	    end
 	end
     end
@@ -316,31 +331,22 @@ DrawGLScene = lambda {
 
 
 #-----------------------------------------------------------
-
 # The function called whenever a key is pressed.
 keyPressed = lambda {|key, x, y| 
-
-  case key
-  when 27  # If escape is pressed, kill everything. 
-    glutDestroyWindow($window)     # shut down our window 
-    # exit the program...normal termination.
-    exit(0)                   
-  end
+    case key
+	when 27
+	    # If the esc key is pressed, shutdown the window and exit
+	    glutDestroyWindow($window)
+	    exit(0)
+    end
 }
 
 
 #-----------------------------------------------------------
-
-$x = 0.0
-$y = 0.0
-$z = -5.0
-
-$rotx = 0.0
-$roty = 0.0
-$rotz = 0.0
-
 # The function called whenever a special key is pressed
 specialKeyPressed = lambda {|key,x,y|
+
+    # Get the modifier key such as SHIFT, CTRL, ALT
     mod = glutGetModifiers()
 
     case key
@@ -382,13 +388,13 @@ specialKeyPressed = lambda {|key,x,y|
 	    end
     end
 
+    # Prints out the current position and rotation of the camera to the console
     puts "x = #{$x}, y = #{$y}, z = #{$z}"
     puts "rotx = #{$rotx}, roty = #{$roty}, rotz = #{$rotz}"
 }
 
 
 #-----------------------------------------------------------
-
 #Initialize GLUT state - glut will take any command line arguments that pertain
 # to it or X Windows - look at its documentation at 
 # http://reality.sgi.com/mjk/spec3/spec3.html 
