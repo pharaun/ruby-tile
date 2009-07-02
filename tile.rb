@@ -9,7 +9,7 @@ include Gl,Glu,Glut
 HEXAGON_TILE = true
 
 # Direction of Hexagon rendering
-HEXAGON_VERT = true
+HEXAGON_VERT = false
 
 # Define step for hexagon
 HEX_STEP = (2.0 * Math::PI/6.0)
@@ -64,14 +64,15 @@ end
 
 #-----------------------------------------------------------
 def Render_Hexagon(p_x, p_y)
-    angle = 0.0
 
     if HEXAGON_VERT
+	angle = 0.0
 	tile_x = p_x * HEX_SIDE * 1.5
 	tile_y = p_y * HEX_HEIGHT + (p_x % 2) * HEX_HEIGHT / 2.0
     else
-	# Calc the spacing for horz spacing and redo the hexagon
-	# polygon stuff below also
+	angle = HEX_STEP * 1.5
+	tile_x = p_x * HEX_HEIGHT + (p_y % 2) * HEX_HEIGHT / 2.0
+	tile_y = p_y * HEX_SIDE * 1.5
     end
 		    
     glBegin(GL_TRIANGLE_FAN)
@@ -90,10 +91,17 @@ def Render_Hexagon(p_x, p_y)
 	    glVertex3f(tile_x + HEX_RADIUS * x, tile_y + HEX_RADIUS * y, 0.0)
 	end
 
-	# Close the fan
-	glTexCoord2f(1.0, 0.5)
-	#glVertex3f(HEX_RADIUS, 0.0, 0.0)
-	glVertex3f(tile_x + HEX_RADIUS, tile_y, 0.0)
+	if HEXAGON_VERT
+	    # Close the fan
+	    glTexCoord2f(1.0, 0.5)
+	    #glVertex3f(HEX_RADIUS, 0.0, 0.0)
+	    glVertex3f(tile_x + HEX_RADIUS, tile_y, 0.0)
+	else
+	    # Close the fan
+	    glTexCoord2f(0.5, 1.0)
+	    #glVertex3f(HEX_RADIUS, 0.0, 0.0)
+	    glVertex3f(tile_x, tile_y + HEX_RADIUS, 0.0)
+	end
     glEnd()
 end
 
