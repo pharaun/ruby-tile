@@ -109,18 +109,34 @@ def Render_Hexagon(p_x, p_y)
 	glTexCoord2f(0.5, 0.5)
 	glVertex3f(tile_x, tile_y, 0.0)
 
-#	for num_vertices in (0...6) do
-	6.times do |num_vertices|
-#	    x = Math.cos(angle)
-#	    y = Math.sin(angle)
-	    x = $CACHE_SIN[num_vertices]
-	    y = $CACHE_COS[num_vertices]
 
-#	    angle += HEXAGON_STEP
+##	for num_vertices in (0...6) do
+#	6.times do |num_vertices|
+##	    x = Math.cos(angle)
+##	    y = Math.sin(angle)
+#	    x = $CACHE_SIN[num_vertices]
+#	    y = $CACHE_COS[num_vertices]
+#
+##	    angle += HEXAGON_STEP
+#
+#	    glTexCoord2f((x+1)/2.0, (y+1)/2.0)
+#	    glVertex3f(tile_x + HEXAGON_RADIUS * x, tile_y + HEXAGON_RADIUS * y, 0.0)
+#	end
 
-	    glTexCoord2f((x+1)/2.0, (y+1)/2.0)
-	    glVertex3f(tile_x + HEXAGON_RADIUS * x, tile_y + HEXAGON_RADIUS * y, 0.0)
-	end
+	# Unrolls the loop above
+	glTexCoord2f(($CACHE_SIN[0]+1)/2.0, ($CACHE_COS[0]+1)/2.0)
+	glVertex3f(tile_x + HEXAGON_RADIUS * $CACHE_SIN[0], tile_y + HEXAGON_RADIUS * $CACHE_COS[0], 0.0)
+	glTexCoord2f(($CACHE_SIN[1]+1)/2.0, ($CACHE_COS[1]+1)/2.0)
+	glVertex3f(tile_x + HEXAGON_RADIUS * $CACHE_SIN[1], tile_y + HEXAGON_RADIUS * $CACHE_COS[1], 0.0)
+	glTexCoord2f(($CACHE_SIN[2]+1)/2.0, ($CACHE_COS[2]+1)/2.0)
+	glVertex3f(tile_x + HEXAGON_RADIUS * $CACHE_SIN[2], tile_y + HEXAGON_RADIUS * $CACHE_COS[2], 0.0)
+	glTexCoord2f(($CACHE_SIN[3]+1)/2.0, ($CACHE_COS[3]+1)/2.0)
+	glVertex3f(tile_x + HEXAGON_RADIUS * $CACHE_SIN[3], tile_y + HEXAGON_RADIUS * $CACHE_COS[3], 0.0)
+	glTexCoord2f(($CACHE_SIN[4]+1)/2.0, ($CACHE_COS[4]+1)/2.0)
+	glVertex3f(tile_x + HEXAGON_RADIUS * $CACHE_SIN[4], tile_y + HEXAGON_RADIUS * $CACHE_COS[4], 0.0)
+	glTexCoord2f(($CACHE_SIN[5]+1)/2.0, ($CACHE_COS[5]+1)/2.0)
+	glVertex3f(tile_x + HEXAGON_RADIUS * $CACHE_SIN[5], tile_y + HEXAGON_RADIUS * $CACHE_COS[5], 0.0)
+
 
 	# Close the fan
 	if HEXAGON_VERT
