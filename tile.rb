@@ -93,13 +93,13 @@ end
 def Render_Hexagon(p_x, p_y)
 
     if HEXAGON_VERT
-	angle = 0.0
+#	angle = 0.0
 
 	tile_x = p_x * HEXAGON_SIDE * 1.5
 	tile_y = p_y * HEXAGON_HEIGHT + (p_x % 2) * HEXAGON_HEIGHT / 2.0
     else
 	# The hexagon is rotated till the final vertix is at the top, to simpfy its placement
-	angle = HEXAGON_STEP * 1.5
+#	angle = HEXAGON_STEP * 1.5
 	
 	tile_x = p_x * HEXAGON_HEIGHT + (p_y % 2) * HEXAGON_HEIGHT / 2.0
 	tile_y = p_y * HEXAGON_SIDE * 1.5
@@ -116,7 +116,7 @@ def Render_Hexagon(p_x, p_y)
 	    x = $CACHE_SIN[num_vertices]
 	    y = $CACHE_COS[num_vertices]
 
-	    angle += HEXAGON_STEP
+#	    angle += HEXAGON_STEP
 
 	    glTexCoord2f((x+1)/2.0, (y+1)/2.0)
 	    glVertex3f(tile_x + HEXAGON_RADIUS * x, tile_y + HEXAGON_RADIUS * y, 0.0)
