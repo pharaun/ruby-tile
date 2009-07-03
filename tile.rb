@@ -10,7 +10,7 @@ include Gl,Glu,Glut
 HEXAGON_TILE = true
 
 # Direction of Hexagon rendering, true for vertical hexagon tiles, and false for horzional
-HEXAGON_VERT = false
+HEXAGON_VERT = true
 
 # Define step for hexagon
 HEXAGON_STEP = (2.0 * Math::PI/6.0)
@@ -20,6 +20,10 @@ HEXAGON_SIZE = 1.0
 HEXAGON_RADIUS = HEXAGON_SIZE/2
 HEXAGON_HEIGHT = HEXAGON_SIZE * Math.cos(HEXAGON_STEP/2.0)
 HEXAGON_SIDE = HEXAGON_SIZE * Math.sin(HEXAGON_STEP/2.0)
+
+# Cached Sin/Cos values
+$CACHE_SIN = []
+$CACHE_COS = []
 
 # Define Max map
 MAP_SIZEX = 10
@@ -70,6 +74,22 @@ end
 
 
 #-----------------------------------------------------------
+def Pregenerate_Hexagon() 
+    if HEXAGON_VERT
+	angle = 0.0
+    else
+	angle = HEXAGON_STEP * 1.5
+    end
+
+    6.times do |x|
+	$CACHE_SIN << Math.cos(angle)
+	$CACHE_COS << Math.sin(angle)
+	angle += HEXAGON_STEP
+    end
+end
+
+
+#-----------------------------------------------------------
 def Render_Hexagon(p_x, p_y)
 
     if HEXAGON_VERT
@@ -89,9 +109,12 @@ def Render_Hexagon(p_x, p_y)
 	glTexCoord2f(0.5, 0.5)
 	glVertex3f(tile_x, tile_y, 0.0)
 
-	for num_vertices in (0...6) do
-	    x = Math.cos(angle)
-	    y = Math.sin(angle)
+#	for num_vertices in (0...6) do
+	6.times do |num_vertices|
+#	    x = Math.cos(angle)
+#	    y = Math.sin(angle)
+	    x = $CACHE_SIN[num_vertices]
+	    y = $CACHE_COS[num_vertices]
 
 	    angle += HEXAGON_STEP
 
@@ -259,6 +282,10 @@ def InitGL(width, height)
 
     # Reset back to the model Matrix
     glMatrixMode(GL_MODELVIEW)
+	    
+    if HEXAGON_TILE
+	Pregenerate_Hexagon() 
+    end
 end
 
 
@@ -308,8 +335,10 @@ DrawGLScene = lambda {
 
 
     # Tile rendering
-    for y in (0...MAP_SIZEY) do
-	for x in (0...MAP_SIZEX) do
+#    for y in (0...MAP_SIZEY) do
+    MAP_SIZEY.times do |y|
+#	for x in (0...MAP_SIZEX) do
+	MAP_SIZEX.times do |x|
 	    tile = $map[y][x]
 	    
 	    glBindTexture(GL_TEXTURE_2D, $texture[tile])
@@ -322,7 +351,7 @@ DrawGLScene = lambda {
 	end
     end
 
-#    Fps()
+    Fps()
 
     # Since this is double buffered, swap the buffers to display 
     # what just got drawn.
