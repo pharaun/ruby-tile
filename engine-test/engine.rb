@@ -12,12 +12,12 @@ class Engine
     # Create and setup the inistance variables
     def initialize()
 	@conf = nil
-	
+
 	# Resources for the engine
 	@resource = {
 	    :sdl_app => nil
 	}
-	
+
 	# Engine state
 	@state = {
 	    :done	=> false,
@@ -32,6 +32,9 @@ class Engine
 
 	# Event lookup table
 	@lookup = {}
+
+	# Event/command lookup table
+	@actions = {}
     end
 
 
@@ -42,19 +45,23 @@ class Engine
 	init_conf()
 	init_window()
 	init_event_processing()
+	init_command_actions()
     end
 
-    
+
     #-------------------------------------------
     def init_conf()
 	@conf = {
 	    :title  => 'Test Engine',
 	    :width  => 640,
 	    :height => 480,
-	    :fovy   => 90
+	    :fovy   => 90,
+	    :bind   => {
+		'escape'    => :quit
+	    }
 	}
     end
-   
+
 
     #-------------------------------------------
     def init_window()
@@ -72,7 +79,7 @@ class Engine
 	SDL::Mouse.hide
     end
 
-    
+
     #-------------------------------------------
     def set_projection_3d()
 	aspect = @conf[:width] / @conf[:height]
@@ -103,7 +110,7 @@ class Engine
 	end
     end
 
-    
+
     #-------------------------------------------
     def do_frame()
 	prep_frame()
@@ -111,23 +118,20 @@ class Engine
 	end_frame()
     end
 
-    
+
     #-------------------------------------------
     def draw_frame()
 	set_projection_3d()
 	set_view_3d()
 	draw_view()
-
-#	print '.'
-	@state[:done] = true if @world[:time] >= 5
     end
 
-    
+
     #-------------------------------------------
     def update_view()
 	@world[:view] = {
-	    :position	=> [6, 2, 10],
-	    :orientation	=> [-90 + 36 * @world[:time], 0, 1, 0]
+	    :position	    => [6, 2, 10],
+	    :orientation    => [-90 + 36 * @world[:time], 0, 1, 0]
 	}
     end
 
@@ -143,13 +147,13 @@ class Engine
 
 
     #-------------------------------------------
-    def main() 
+    def main()
 	init()
 	main_loop()
 	cleanup()
     end
 
-    
+
     #-------------------------------------------
     def update_time()
 	@world[:time] = now()
@@ -161,7 +165,7 @@ class Engine
 	return SDL::getTicks() / 1000
     end
 
-    
+
     #-------------------------------------------
     def prep_frame()
 	glClear(GL_COLOR_BUFFER_BIT |
@@ -181,7 +185,7 @@ class Engine
 	glScale(2, 2, 2)
 	draw_cube()
 	glPopMatrix()
-	
+
 	glColor(1, 1, 0)
 	glPushMatrix()
 	glTranslate(4, 0, 0)
@@ -228,7 +232,7 @@ class Engine
 		4.times do |vertex|
 		    index = indices[4 * face + vertex]
 		    coords = vertices[index]
-		    
+
 		    glVertex(coords)
 		end
 	    end
@@ -242,20 +246,34 @@ class Engine
 	print "\nDone.\n"
     end
 
-    
+
     #-------------------------------------------
     def init_event_processing()
 	# Add SDL events to be processed here
 	@lookup[:quit] = method(:process_quit)
+	@lookup[:keydown] = method(:process_key_down)
     end
-	    
-    
+
+
+    #-------------------------------------------
+    def init_command_actions()
+	@actions[:quit] = method(:action_quit)
+    end
+
+
     #-------------------------------------------
     def do_events()
 	queue = process_events()
+
+	while (not @state[:quit] and not queue.empty?)
+	    command = queue.pop
+	    action = @actions[command] or next
+
+	    action.call()
+	end
     end
 
-    
+
     #-------------------------------------------
     def process_events()
 	queue = []
@@ -264,14 +282,17 @@ class Engine
 	    case event
 		when SDL::Event::Quit
 		    eventType = :quit
+
+		when SDL::Event::KeyDown
+		    eventType = :keydown
 	    end
-	   
+
 	    # Gets the method to call for the event or skip to next event
 	    process = @lookup[eventType] or next
 
 	    # Execute the method, and if there is more work needed, other wise
 	    # if its to be ignored, it shall return a false
-	    command = process.call
+	    command = process.call(event)
 
 	    queue.push(command) if command != false
 	end
@@ -280,12 +301,25 @@ class Engine
 
 
     #-------------------------------------------
-    def process_quit()
+    def process_quit(event)
 	@state[:done] = true
 	puts "runs"
-	return 'quit'
+	return :quit
     end
 
+
+    #-------------------------------------------
+    def process_key_down(event)
+	name = SDL::Key.getKeyName(event.sym)
+
+	return (@conf[:bind][name] || false)
+    end
+
+
+    #-------------------------------------------
+    def action_quit()
+	@state[:done] = true
+    end
 end
 
 
