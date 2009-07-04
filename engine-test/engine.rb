@@ -30,7 +30,7 @@ class Engine
 	    :view	=> nil
 	}
 
-	# Lookup table for event handling
+	# Event lookup table
 	@lookup = {}
     end
 
@@ -246,7 +246,7 @@ class Engine
     #-------------------------------------------
     def init_event_processing()
 	# Add SDL events to be processed here
-	@lookup[SDL::Event::Quit] = method(:process_quit)
+	@lookup[:quit] = method(:process_quit)
     end
 	    
     
@@ -261,9 +261,13 @@ class Engine
 	queue = []
 
 	while (not @state[:quit] and event = SDL::Event.poll)
-
+	    case event
+		when SDL::Event::Quit
+		    eventType = :quit
+	    end
+	   
 	    # Gets the method to call for the event or skip to next event
-	    process = @lookup[event] or next
+	    process = @lookup[eventType] or next
 
 	    # Execute the method, and if there is more work needed, other wise
 	    # if its to be ignored, it shall return a false
