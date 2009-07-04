@@ -29,6 +29,9 @@ class Engine
 	    :time	=> 0,
 	    :view	=> nil
 	}
+
+	# Lookup table for event handling
+	@lookup = {}
     end
 
 
@@ -38,6 +41,7 @@ class Engine
 
 	init_conf()
 	init_window()
+	init_event_processing()
     end
 
     
@@ -93,6 +97,7 @@ class Engine
 	until(@state[:done]) do
 	    @state[:frame] += 1
 	    update_time()
+	    do_events()
 	    update_view()
 	    do_frame()
 	end
@@ -236,9 +241,45 @@ class Engine
     def cleanup()
 	print "\nDone.\n"
     end
+
+    
+    #-------------------------------------------
+    def init_event_processing()
+	# Add SDL events to be processed here
+	@lookup[SDL::Event::Quit] = method(:process_quit)
+    end
+	    
+    
+    #-------------------------------------------
+    def do_events()
+	queue = process_events()
+    end
+
+    
+    #-------------------------------------------
+    def process_events()
+	queue = []
+
+	while (not @state[:quit] and event = SDL::Event.poll)
+
+	    # Gets the method to call for the event or skip to next event
+	    process = @lookup[event] or next
+
+	    # Execute the method, and if there is more work needed, other wise
+	    # if its to be ignored, it shall return a false
+	    command = process.call
+
+	    queue.push(command) if command != false
+	end
+	return queue
+    end
+
+
+    def process_quit()
+    end
+
 end
 
-#-------------------------------------------
 
 e = Engine.new
 e.main()
