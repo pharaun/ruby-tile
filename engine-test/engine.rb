@@ -118,7 +118,7 @@ class Engine
 	set_view_3d()
 	draw_view()
 
-	print '.'
+#	print '.'
 	@state[:done] = true if @world[:time] >= 5
     end
 
@@ -275,7 +275,11 @@ class Engine
     end
 
 
+    #-------------------------------------------
     def process_quit()
+	@state[:done] = true
+	puts "runs"
+	return 'quit'
     end
 
 end
