@@ -27,6 +27,7 @@ class Engine
 	# World's state
 	@world = {
 	    :time	=> 0,
+	    :d_time	=> 0,
 	    :view	=> nil
 	}
 
@@ -46,6 +47,8 @@ class Engine
 	init_window()
 	init_event_processing()
 	init_command_actions()
+	init_view()
+	init_time()
     end
 
 
@@ -57,7 +60,9 @@ class Engine
 	    :height => 480,
 	    :fovy   => 90,
 	    :bind   => {
-		'escape'    => :quit
+		'escape'    => :quit,
+		'left'	    => :_yaw_left,
+		'right'	    => :_yaw_right
 	    }
 	}
     end
@@ -128,11 +133,19 @@ class Engine
 
 
     #-------------------------------------------
-    def update_view()
+    def init_view()
 	@world[:view] = {
 	    :position	    => [6, 2, 10],
-	    :orientation    => [-90 + 36 * @world[:time], 0, 1, 0]
+	    :orientation    => [0, 0, 1, 0],
+	    :d_yaw	    => 0
 	}
+    end
+
+
+    #-------------------------------------------
+    def update_view()
+	@world[:view][:orientation][0] += @world[:view][:d_yaw]
+	@world[:view][:d_yaw] = 0
     end
 
 
@@ -156,6 +169,9 @@ class Engine
 
     #-------------------------------------------
     def update_time()
+	new_now = now()
+
+	@world[:d_time] = new_now - @world[:time]
 	@world[:time] = now()
     end
 
@@ -251,13 +267,16 @@ class Engine
     def init_event_processing()
 	# Add SDL events to be processed here
 	@lookup[:quit] = method(:process_quit)
-	@lookup[:keydown] = method(:process_key_down)
+	@lookup[:keyup] = method(:process_key)
+	@lookup[:keydown] = method(:process_key)
     end
 
 
     #-------------------------------------------
     def init_command_actions()
 	@actions[:quit] = method(:action_quit)
+	@actions[:_yaw_left] = method(:action_move)
+	@actions[:_yaw_right] = method(:action_move)
     end
 
 
@@ -267,9 +286,15 @@ class Engine
 
 	while (not @state[:quit] and not queue.empty?)
 	    command = queue.pop
-	    action = @actions[command] or next
 
-	    action.call()
+	    if command.kind_of?(Array)
+		the_command = command.shift
+		action = @actions[the_command]
+		action.call(the_command, command)
+	    else
+		action = @actions[command] or next
+		action.call()
+	    end
 	end
     end
 
@@ -285,6 +310,9 @@ class Engine
 
 		when SDL::Event::KeyDown
 		    eventType = :keydown
+		
+		when SDL::Event::KeyUp
+		    eventType = :keyup
 	    end
 
 	    # Gets the method to call for the event or skip to next event
@@ -292,7 +320,7 @@ class Engine
 
 	    # Execute the method, and if there is more work needed, other wise
 	    # if its to be ignored, it shall return a false
-	    command = process.call(event)
+	    command = process.call(event, eventType)
 
 	    queue.push(command) if command != false
 	end
@@ -309,16 +337,41 @@ class Engine
 
 
     #-------------------------------------------
-    def process_key_down(event)
+    def process_key(event, eventType)
 	name = SDL::Key.getKeyName(event.sym)
 
-	return (@conf[:bind][name] || false)
+	if ((@conf[:bind][name].to_s =~ /^_.*/) != nil)
+	    return ([@conf[:bind][name], eventType == :keyup] || false)
+	else
+	    return (@conf[:bind][name] || false)
+	end
     end
 
 
     #-------------------------------------------
     def action_quit()
 	@state[:done] = true
+    end
+
+
+    #-------------------------------------------
+    def action_move(command, args)
+	speed_yaw = 10
+
+	move_update = {
+	    :_yaw_left	=>  [:d_yaw, speed_yaw],
+	    :_yaw_right	=>  [:d_yaw, -speed_yaw]
+	}
+
+	update = move_update[command] or return
+
+	@world[:view][update[0]] += update[1]
+    end
+
+
+    #-------------------------------------------
+    def init_time()
+	@world[:time] = now()
     end
 end
 
