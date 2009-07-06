@@ -62,7 +62,8 @@ class Engine
 	    :bind   => {
 		'escape'    => :quit,
 		'left'	    => :_yaw_left,
-		'right'	    => :_yaw_right
+		'right'	    => :_yaw_right,
+		'tab'	    => :_look_behind
 	    }
 	}
     end
@@ -137,7 +138,9 @@ class Engine
 	@world[:view] = {
 	    :position	    => [6, 2, 10],
 	    :orientation    => [0, 0, 1, 0],
-	    :d_yaw	    => 0
+	    :d_yaw	    => 0,
+	    :v_yaw	    => 0,
+	    :dv_yaw	    => 0
 	}
     end
 
@@ -146,6 +149,11 @@ class Engine
     def update_view()
 	@world[:view][:orientation][0] += @world[:view][:d_yaw]
 	@world[:view][:d_yaw] = 0
+
+	@world[:view][:v_yaw] += @world[:view][:dv_yaw]
+	@world[:view][:dv_yaw] = 0
+
+	@world[:view][:orientation][0] += @world[:view][:v_yaw] * @world[:d_time]
     end
 
 
@@ -277,6 +285,7 @@ class Engine
 	@actions[:quit] = method(:action_quit)
 	@actions[:_yaw_left] = method(:action_move)
 	@actions[:_yaw_right] = method(:action_move)
+	@actions[:_look_behind] = method(:action_move)
     end
 
 
@@ -329,7 +338,7 @@ class Engine
 
 
     #-------------------------------------------
-    def process_quit(event)
+    def process_quit(event, eventType)
 	@state[:done] = true
 	puts "runs"
 	return :quit
@@ -356,16 +365,18 @@ class Engine
 
     #-------------------------------------------
     def action_move(command, args)
-	speed_yaw = 10
+	sign = args[0] ? 1 : -1
+	speed_yaw = 36
 
 	move_update = {
-	    :_yaw_left	=>  [:d_yaw, speed_yaw],
-	    :_yaw_right	=>  [:d_yaw, -speed_yaw]
+	    :_yaw_left	    =>  [:dv_yaw, speed_yaw],
+	    :_yaw_right	    =>  [:dv_yaw, -speed_yaw],
+	    :_look_behind   =>  [:d_yaw,  180]
 	}
 
 	update = move_update[command] or return
 
-	@world[:view][update[0]] += update[1]
+	@world[:view][update[0]] += (update[1] * sign)
     end
 
 
