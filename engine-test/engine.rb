@@ -177,8 +177,24 @@ class Engine
 	@world[:view][:v_forward] += @world[:view][:dv_forward]
 	@world[:view][:dv_forward] = 0
 
-	@world[:view][:position][0] += @world[:view][:v_right] * @world[:d_time]
-	@world[:view][:position][2] += @world[:view][:v_forward] * @world[:d_time]
+	vx, vz = rotate_xz(@world[:view][:orientation][0], 
+			   @world[:view][:v_right],
+			   -@world[:view][:v_forward])
+
+	@world[:view][:position][0] += vx * @world[:d_time]
+	@world[:view][:position][2] += vz * @world[:d_time]
+    end
+
+
+    #-------------------------------------------
+    def rotate_xz(angle, x, z)
+	cos = Math.cos(angle * Math::PI / 180)
+	sin = Math.sin(angle * Math::PI / 180)
+
+	rot_x =	 cos * x + sin * z
+	rot_z = -sin * x + cos * z
+
+	return [rot_x, rot_z]
     end
 
 
