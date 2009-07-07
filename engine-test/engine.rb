@@ -5,6 +5,7 @@
 
 require "sdl"
 require "opengl"
+require "RMagick"
 include Gl,Glu,Glut
 
 class Engine
@@ -20,8 +21,10 @@ class Engine
 
 	# Engine state
 	@state = {
-	    :done	=> false,
-	    :frame	=> 0
+	    :done		=> false,
+	    :frame		=> 0,
+	    :need_screenshot	=> false,
+	    :screenshot_seq	=> 0
 	}
 
 	# World's state
@@ -61,6 +64,11 @@ class Engine
 	    :fovy   => 90,
 	    :bind   => {
 		'escape'    => :quit,
+		'f4'	    => :_screenshot,
+		'a'	    => :_move_left,
+		'd'	    => :_move_right,
+		'w'	    => :_move_forward,
+		's'	    => :_move_back,
 		'left'	    => :_yaw_left,
 		'right'	    => :_yaw_right,
 		'tab'	    => :_look_behind
@@ -102,6 +110,8 @@ class Engine
     #-------------------------------------------
     def end_frame()
 	SDL::GL.swap_buffers
+
+	screenshot() if @state[:need_screenshot]
     end
 
 
@@ -140,13 +150,18 @@ class Engine
 	    :orientation    => [0, 0, 1, 0],
 	    :d_yaw	    => 0,
 	    :v_yaw	    => 0,
-	    :dv_yaw	    => 0
+	    :v_forward	    => 0,
+	    :v_right	    => 0,
+	    :dv_yaw	    => 0,
+	    :dv_forward	    => 0,
+	    :dv_right	    => 0
 	}
     end
 
 
     #-------------------------------------------
     def update_view()
+	# yaws
 	@world[:view][:orientation][0] += @world[:view][:d_yaw]
 	@world[:view][:d_yaw] = 0
 
@@ -154,6 +169,16 @@ class Engine
 	@world[:view][:dv_yaw] = 0
 
 	@world[:view][:orientation][0] += @world[:view][:v_yaw] * @world[:d_time]
+
+	# Forward/backward, sidways
+	@world[:view][:v_right] += @world[:view][:dv_right]
+	@world[:view][:dv_right] = 0
+
+	@world[:view][:v_forward] += @world[:view][:dv_forward]
+	@world[:view][:dv_forward] = 0
+
+	@world[:view][:position][0] += @world[:view][:v_right] * @world[:d_time]
+	@world[:view][:position][2] += @world[:view][:v_forward] * @world[:d_time]
     end
 
 
@@ -283,6 +308,11 @@ class Engine
     #-------------------------------------------
     def init_command_actions()
 	@actions[:quit] = method(:action_quit)
+	@actions[:_screenshot] = method(:action_screenshot)
+	@actions[:_move_left] = method(:action_move)
+	@actions[:_move_right] = method(:action_move)
+	@actions[:_move_forward] = method(:action_move)
+	@actions[:_move_back] = method(:action_move)
 	@actions[:_yaw_left] = method(:action_move)
 	@actions[:_yaw_right] = method(:action_move)
 	@actions[:_look_behind] = method(:action_move)
@@ -367,11 +397,16 @@ class Engine
     def action_move(command, args)
 	sign = args[0] ? 1 : -1
 	speed_yaw = 36
+	speed_move = 5
 
 	move_update = {
-	    :_yaw_left	    =>  [:dv_yaw, speed_yaw],
-	    :_yaw_right	    =>  [:dv_yaw, -speed_yaw],
-	    :_look_behind   =>  [:d_yaw,  180]
+	    :_yaw_left	    =>  [:dv_yaw,	speed_yaw],
+	    :_yaw_right	    =>  [:dv_yaw,	-speed_yaw],
+	    :_move_right    =>  [:dv_right,	speed_move],
+	    :_move_left	    =>  [:dv_right,	-speed_move],
+	    :_move_forward  =>  [:dv_forward,	speed_move],
+	    :_move_back	    =>  [:dv_forward,	-speed_move],
+	    :_look_behind   =>  [:d_yaw,	180]
 	}
 
 	update = move_update[command] or return
@@ -379,10 +414,39 @@ class Engine
 	@world[:view][update[0]] += (update[1] * sign)
     end
 
+    
+    #-------------------------------------------
+    def action_screenshot(command, args)
+
+	if not args[0]
+	    @state[:need_screenshot] = true
+	end
+    end
+
 
     #-------------------------------------------
     def init_time()
 	@world[:time] = now()
+    end
+    
+    
+    #-------------------------------------------
+    def screenshot()
+	file = "screenshot#{@state[:screenshot_seq]}.png"
+
+	glReadBuffer(GL_FRONT)
+
+	data = glReadPixels(0, 0, @conf[:width], @conf[:height],
+			    GL_RGBA, GL_UNSIGNED_SHORT)
+
+	image = Magick::Image.new(@conf[:width], @conf[:height])
+	image.import_pixels(0, 0, @conf[:width], @conf[:height],
+			    "RGBA", data, Magick::ShortPixel)
+	image.flip!
+	image.write(file)
+
+	@state[:screenshot_seq] += 1
+	@state[:need_screenshot] = false
     end
 end
 
