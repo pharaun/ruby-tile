@@ -52,8 +52,14 @@ class Engine
 	init_command_actions()
 	init_view()
 	init_time()
+	init_objects()
     end
 
+
+    #-------------------------------------------
+    def init_objects()
+
+    end
 
     #-------------------------------------------
     def init_conf()
@@ -152,7 +158,9 @@ class Engine
 	glLight(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.5)
 
 	# Spotlight
-	glLight(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0)
+	#glLight(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0)
+	glLight(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0)
+	glLight(GL_LIGHT1, GL_SPOT_EXPONENT, 80.0)
 
 	glEnable(GL_LIGHT1)
     end
@@ -339,7 +347,20 @@ class Engine
 
 
     #-------------------------------------------
-    def draw_quad_face(normals, corners, div=10)
+    def draw_quad_face(normals, corners)
+
+	glBegin(GL_QUADS)
+	    glNormal(normals)
+
+	    corners.each do |coords|
+		glVertex(coords)
+	    end
+	glEnd()
+    end
+
+
+    #-------------------------------------------
+    def draw_quad_face_subdiv(normals, corners, div=10)
 
 	a, b, c, d = corners
 
