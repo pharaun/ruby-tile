@@ -132,6 +132,16 @@ class Engine
 	prep_frame()
 	draw_frame()
 	end_frame()
+
+	glEnable(GL_COLOR_MATERIAL)
+    end
+
+
+    #-------------------------------------------
+    def set_world_lights
+	glLight(GL_LIGHT0, GL_POSITION, 0.0, 0.0, 1.0, 0.0)
+
+	glEnable(GL_LIGHT0)
     end
 
 
@@ -139,6 +149,7 @@ class Engine
     def draw_frame()
 	set_projection_3d()
 	set_view_3d()
+	set_world_lights()
 	draw_view()
     end
 
@@ -242,7 +253,10 @@ class Engine
 
     #-------------------------------------------
     def draw_view()
+
+	glDisable(GL_LIGHTING)
 	draw_axes()
+	glEnable(GL_LIGHTING)
 
 	glColor(1, 1, 1)
 	glPushMatrix()
@@ -292,8 +306,13 @@ class Engine
 		    [-1, -1,  1], [ 1, -1,  1],
 		    [ 1,  1,  1], [-1,  1,  1]]
 
+	normals = [[0, 0,  1], [ 1, 0, 0], [0, -1, 0],
+		   [0, 0, -1], [-1, 0, 0], [0,  1, 0]]
+
 	glBegin(GL_QUADS)
 	    6.times do |face|
+		glNormal(normals[face])
+
 		4.times do |vertex|
 		    index = indices[4 * face + vertex]
 		    coords = vertices[index]
