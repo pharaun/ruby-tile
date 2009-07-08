@@ -138,16 +138,30 @@ class Engine
 
 
     #-------------------------------------------
-    def set_world_lights
-	glLight(GL_LIGHT0, GL_POSITION, 0.0, 0.0, 1.0, 0.0)
+    def set_world_lights()
+	glLight(GL_LIGHT0, GL_POSITION, [0.0, 0.0, 1.0, 0.0])
 
 	glEnable(GL_LIGHT0)
     end
 
 
     #-------------------------------------------
+    def set_eye_lights()
+	glLight(GL_LIGHT1, GL_POSITION, [0.0, 0.0, 0.0, 1.0])
+	glLight(GL_LIGHT1, GL_DIFFUSE,  [1.0, 1.0, 1.0, 1.0])
+	glLight(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.5)
+
+	# Spotlight
+	glLight(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0)
+
+	glEnable(GL_LIGHT1)
+    end
+
+
+    #-------------------------------------------
     def draw_frame()
 	set_projection_3d()
+	set_eye_lights()
 	set_view_3d()
 	set_world_lights()
 	draw_view()
@@ -309,19 +323,57 @@ class Engine
 	normals = [[0, 0,  1], [ 1, 0, 0], [0, -1, 0],
 		   [0, 0, -1], [-1, 0, 0], [0,  1, 0]]
 
-	glBegin(GL_QUADS)
-	    6.times do |face|
-		glNormal(normals[face])
+	6.times do |face|
+	    corners = []
 
-		4.times do |vertex|
-		    index = indices[4 * face + vertex]
-		    coords = vertices[index]
+	    4.times do |vertex|
+		index = indices[4 * face + vertex]
+		coords = vertices[index]
 
-		    glVertex(coords)
-		end
+		corners.push(coords)
 	    end
-	glEnd()
+	    draw_quad_face(normals[face], corners)
+	end
 
+    end
+
+
+    #-------------------------------------------
+    def draw_quad_face(normals, corners, div=10)
+
+	a, b, c, d = corners
+
+	# As per the Perl Tutorial, it assumes face is a Parallelogram
+	s_ab = calc_vector_step(a, b, div)
+	s_ad = calc_vector_step(a, d, div)
+
+	glNormal(normals)
+	div.times do |strip|
+	    v = [a[0] + strip * s_ab[0],
+		 a[1] + strip * s_ab[1],
+		 a[2] + strip * s_ab[2]]
+
+	    glBegin(GL_QUAD_STRIP)
+		(div+1).times do |quad|
+		    glVertex(v)
+		    glVertex(v[0] + s_ab[0],
+			     v[1] + s_ab[1],
+			     v[2] + s_ab[2])
+
+		    v[0] += s_ad[0]
+		    v[1] += s_ad[1]
+		    v[2] += s_ad[2]
+		end
+	    glEnd()
+	end
+    end
+
+
+    #-------------------------------------------
+    def calc_vector_step(v1, v2, div)
+	return [(v2[0] - v1[0]).to_f / div,
+		(v2[1] - v1[1]).to_f / div,
+		(v2[2] - v1[2]).to_f / div]
     end
 
 
