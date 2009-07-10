@@ -31,7 +31,8 @@ class Engine
 	@world = {
 	    :time	=> 0,
 	    :d_time	=> 0,
-	    :view	=> nil
+	    :view	=> nil,
+	    :objects	=> nil
 	}
 
 	# Event lookup table
@@ -55,10 +56,45 @@ class Engine
 	init_objects()
     end
 
-
+    
     #-------------------------------------------
     def init_objects()
+	@world[:objects] = [
+	    {
+		:draw	    => method(:draw_axes)
+	    },
+	    {
+		:lit	    => true,
+		:color	    => [ 1, 1,  1],
+		:position   => [12, 0, -4],
+		:scale	    => [ 2, 2,  2],
+		:draw	    => method(:draw_cube)
+	    },
+	    {
+		:lit		=> true,
+		:color		=> [  1, 1, 0],
+		:position	=> [  4, 0, 0],
+		:orientation	=> [ 40, 0, 0, 1],
+		:scale		=> [0.2, 1, 2],
+		:draw		=> method(:draw_cube)
+	    }]
 
+	# Programmically generate several boxes in a sequence
+	1.upto(5) do |num|
+	    scale = num * num / 15.0
+	    pos	  = -num * 2
+
+	    @world[:objects].push(
+		{
+		    :lit	    => true,
+		    :color	    => [1, 1, 1],
+		    :position	    => [pos, 2.5, 0],
+		    :orientation    => [30, 1, 0, 0],
+		    :scale	    => [1, 1, scale],
+		    :draw	    => method(:draw_cube)
+		}
+	    )
+	end
     end
 
     #-------------------------------------------
@@ -260,7 +296,7 @@ class Engine
 
     #-------------------------------------------
     def now()
-	return SDL::getTicks() / 1000
+	return SDL::getTicks() / 1000.0
     end
 
 
@@ -270,30 +306,33 @@ class Engine
 	       GL_DEPTH_BUFFER_BIT )
 
 	glEnable(GL_DEPTH_TEST)
+
+	glEnable(GL_NORMALIZE)
     end
 
 
     #-------------------------------------------
     def draw_view()
 
-	glDisable(GL_LIGHTING)
-	draw_axes()
-	glEnable(GL_LIGHTING)
+	@world[:objects].each do |object|
+	    if object[:lit]
+		glEnable(GL_LIGHTING)
+	    else
+		glDisable(GL_LIGHTING)
+	    end
 
-	glColor(1, 1, 1)
-	glPushMatrix()
-	glTranslate(12, 0, -4)
-	glScale(2, 2, 2)
-	draw_cube()
-	glPopMatrix()
+	    glColor(object[:color])	    unless object[:color].nil?
 
-	glColor(1, 1, 0)
-	glPushMatrix()
-	glTranslate(4, 0, 0)
-	glRotate(40, 0, 0, 1)
-	glScale(0.2, 1, 2)
-	draw_cube()
-	glPopMatrix()
+	    glPushMatrix()
+
+	    glTranslate(*object[:position]) unless object[:position].nil?
+	    glRotate(*object[:orientation]) unless object[:orientation].nil?
+	    glScale(*object[:scale])	    unless object[:scale].nil?
+
+	    object[:draw].call()
+
+	    glPopMatrix()
+	end
     end
 
 
