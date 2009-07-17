@@ -40,6 +40,11 @@ class Engine
 
 	# Event/command lookup table
 	@actions = {}
+
+	# Models and their display list
+	@models = {
+	    :dls	=> {}
+	}
     end
 
 
@@ -53,6 +58,7 @@ class Engine
 	init_command_actions()
 	init_view()
 	init_time()
+	init_models()
 	init_objects()
     end
 
@@ -68,7 +74,8 @@ class Engine
 		:color	    => [ 1, 1,  1],
 		:position   => [12, 0, -4],
 		:scale	    => [ 2, 2,  2],
-		:draw	    => method(:draw_cube)
+		#:draw	    => method(:draw_cube)
+		:model	    => :cube
 	    },
 	    {
 		:lit		=> true,
@@ -76,7 +83,8 @@ class Engine
 		:position	=> [  4, 0, 0],
 		:orientation	=> [ 40, 0, 0, 1],
 		:scale		=> [0.2, 1, 2],
-		:draw		=> method(:draw_cube)
+		#:draw		=> method(:draw_cube)
+		:model		=> :cube
 	    }]
 
 	# Programmically generate several boxes in a sequence
@@ -91,7 +99,8 @@ class Engine
 		    :position	    => [pos, 2.5, 0],
 		    :orientation    => [30, 1, 0, 0],
 		    :scale	    => [1, 1, scale],
-		    :draw	    => method(:draw_cube)
+		    #:draw	    => method(:draw_cube)
+		    :model	    => :cube
 		}
 	    )
 	end
@@ -104,6 +113,7 @@ class Engine
 	    :width  => 640,
 	    :height => 480,
 	    :fovy   => 90,
+	    :benchmark	=> true,
 	    :bind   => {
 		'escape'    => :quit,
 		'f4'	    => :_screenshot,
@@ -329,7 +339,13 @@ class Engine
 	    glRotate(*object[:orientation]) unless object[:orientation].nil?
 	    glScale(*object[:scale])	    unless object[:scale].nil?
 
-	    object[:draw].call()
+	    #object[:draw].call()
+	    if (not object[:model].nil?)
+		display_list = @models[:dls][object[:model]]
+		glCallList(display_list)
+	    else
+		object[:draw].call()
+	    end
 
 	    glPopMatrix()
 	end
@@ -386,20 +402,7 @@ class Engine
 
 
     #-------------------------------------------
-    def draw_quad_face(normals, corners)
-
-	glBegin(GL_QUADS)
-	    glNormal(normals)
-
-	    corners.each do |coords|
-		glVertex(coords)
-	    end
-	glEnd()
-    end
-
-
-    #-------------------------------------------
-    def draw_quad_face_subdiv(normals, corners, div=10)
+    def draw_quad_face(normals, corners, div=10)
 
 	a, b, c, d = corners
 
@@ -469,6 +472,9 @@ class Engine
     #-------------------------------------------
     def do_events()
 	queue = process_events()
+	triggered = triggered_events()
+
+	queue.concat(triggered)
 
 	while (not @state[:quit] and not queue.empty?)
 	    command = queue.pop
@@ -482,6 +488,16 @@ class Engine
 		action.call()
 	    end
 	end
+    end
+    
+    
+    #-------------------------------------------
+    def triggered_events()
+	queue = []
+
+	queue.push(:quit) if (@conf[:benchmark] and @world[:time] >= 5.0)
+
+	return queue
     end
 
 
@@ -574,6 +590,25 @@ class Engine
     #-------------------------------------------
     def init_time()
 	@world[:time] = now()
+    end
+    
+    
+    #-------------------------------------------
+    def init_models()
+	models = {
+	    :cube   =>	method(:draw_cube)
+	}
+
+	base = glGenLists(models.size)
+
+	models.each do |key, value|
+	    glNewList(base, GL_COMPILE)
+		value.call()
+	    glEndList()
+
+	    @models[:dls][key] = base
+	    base += 1
+	end
     end
     
     
