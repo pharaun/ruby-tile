@@ -45,6 +45,9 @@ class Engine
 	@models = {
 	    :dls	=> {}
 	}
+
+	# Fonts
+	@fonts = {}
     end
 
 
@@ -58,6 +61,7 @@ class Engine
 	init_command_actions()
 	init_view()
 	init_time()
+	init_fonts()
 	init_models()
 	init_objects()
     end
@@ -113,7 +117,7 @@ class Engine
 	    :width  => 640,
 	    :height => 480,
 	    :fovy   => 90,
-	    :benchmark	=> true,
+	    :benchmark	=> false,
 	    :bind   => {
 		'escape'    => :quit,
 		'f4'	    => :_screenshot,
@@ -219,6 +223,9 @@ class Engine
 	set_view_3d()
 	set_world_lights()
 	draw_view()
+	set_lighting_2d()
+	draw_fps()
+	sleep(0.1)
     end
 
 
@@ -629,6 +636,88 @@ class Engine
 
 	@state[:screenshot_seq] += 1
 	@state[:need_screenshot] = false
+    end
+    
+    
+    #-------------------------------------------
+    def read_font_file(file)
+	font_file = File.open(file, 'r')
+
+	header = font_file.readline()
+	w, h = (header.chomp()).split('x')
+
+	bitmaps = {}
+	font_file.each('') do |char|
+	    rows = char.split("\n")
+	    hex = rows.shift()
+
+	    # This is quite a bit messy, there's no neat way to pack
+	    # a string in Ruby unlike Perl
+	    rows.map! do |row| 
+		row.tr!('.0', '01')
+
+		# It turns out we don't need to pack "B*" on this we just
+		# need to convert the binary string into decimal, then it'll be
+		# properly packed below
+		row.to_i(2)
+	    end
+
+	    # Join the entire sub-array for each "code page" into one string
+	    bitmap = rows.reverse.pack("C*")
+	    codepoint = hex.hex()
+
+	    bitmaps[codepoint] = bitmap
+	end
+	
+	return [bitmaps, w.to_i, h.to_i]
+    end
+
+    
+    #-------------------------------------------
+    def init_fonts()
+	fonts = {
+	    :numbers	=> 'numbers-7x11.txt'
+	}
+
+	glPixelStore(GL_UNPACK_ALIGNMENT, 1)
+
+	fonts.each do |key, value|
+	    bitmaps, w, h = read_font_file(value)
+
+	    cps = (bitmaps.keys()).sort()
+	    max_cps = cps[-1]
+	    base = glGenLists(max_cps + 1)
+	    
+	    cps.each do |codepoint|
+		glNewList(base + codepoint, GL_COMPILE)
+		    #glBitmap(w, h, 0, 0, w + 2, 0,
+		    glBitmap(8, 13, 0, 0, w + 2, 0,
+			     bitmaps[codepoint])
+		glEndList()
+	    end
+
+	    @fonts[key] = {}
+	    @fonts[key][:base] = base
+	end
+    end
+    
+    
+    #-------------------------------------------
+    def draw_fps()
+	base = @fonts[:numbers][:base]
+	d_time = (@world[:d_time] > 0.0) ? @world[:d_time] : 0.001
+	fps = (1 / d_time).to_i
+
+	glColor(1, 1, 1)
+	glRasterPos(10, 10, 0)
+	glListBase(base)
+	glCallLists(GL_BYTE, fps.to_s)
+    end
+    
+    
+    #-------------------------------------------
+    def set_lighting_2d()
+	glDisable(GL_LIGHTING)
     end
 end
 
