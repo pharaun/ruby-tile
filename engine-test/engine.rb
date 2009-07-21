@@ -225,7 +225,6 @@ class Engine
 	draw_view()
 	set_lighting_2d()
 	draw_fps()
-	sleep(0.1)
     end
 
 
@@ -690,7 +689,7 @@ class Engine
 	    
 	    cps.each do |codepoint|
 		glNewList(base + codepoint, GL_COMPILE)
-		    glBitmap(w, h, 0, 0, w + 2, 0,
+		    glBitmap(w + 1, h, 0, 0, w + 2, 0,
 			     bitmaps[codepoint])
 		glEndList()
 	    end
