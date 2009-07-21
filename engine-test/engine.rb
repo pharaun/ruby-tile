@@ -690,8 +690,7 @@ class Engine
 	    
 	    cps.each do |codepoint|
 		glNewList(base + codepoint, GL_COMPILE)
-		    #glBitmap(w, h, 0, 0, w + 2, 0,
-		    glBitmap(8, 13, 0, 0, w + 2, 0,
+		    glBitmap(w, h, 0, 0, w + 2, 0,
 			     bitmaps[codepoint])
 		glEndList()
 	    end
