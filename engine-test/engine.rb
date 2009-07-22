@@ -48,6 +48,11 @@ class Engine
 
 	# Fonts
 	@fonts = {}
+
+	# Stats
+	@stats = {
+	    :fps    => {}
+	}
     end
 
 
@@ -64,6 +69,7 @@ class Engine
 	init_fonts()
 	init_models()
 	init_objects()
+	init_fps()
     end
 
     
@@ -176,6 +182,7 @@ class Engine
 	until(@state[:done]) do
 	    @state[:frame] += 1
 	    update_time()
+	    update_fps()
 	    do_events()
 	    update_view()
 	    do_frame()
@@ -223,6 +230,7 @@ class Engine
 	set_view_3d()
 	set_world_lights()
 	draw_view()
+	set_projection_2d()
 	set_lighting_2d()
 	draw_fps()
     end
@@ -703,8 +711,7 @@ class Engine
     #-------------------------------------------
     def draw_fps()
 	base = @fonts[:numbers][:base]
-	d_time = (@world[:d_time] > 0.0) ? @world[:d_time] : 0.001
-	fps = (1 / d_time).to_i
+	fps = @stats[:fps][:cur_fps]
 
 	glColor(1, 1, 1)
 	glRasterPos(10, 10, 0)
@@ -716,6 +723,48 @@ class Engine
     #-------------------------------------------
     def set_lighting_2d()
 	glDisable(GL_LIGHTING)
+    end
+    
+    
+    #-------------------------------------------
+    def set_projection_2d()
+	w = @conf[:width]
+	h = @conf[:height]
+
+	glMatrixMode(GL_PROJECTION)
+	glLoadIdentity()
+	gluOrtho2D(0, w, 0, h)
+
+	glMatrixMode(GL_MODELVIEW)
+	glLoadIdentity()
+
+	glDisable(GL_DEPTH_TEST)
+    end
+    
+    
+    #-------------------------------------------
+    def init_fps()
+	@stats[:fps][:cur_fps] = 0
+	@stats[:fps][:last_frame] = 0
+	@stats[:fps][:last_time] = @world[:time]
+    end
+    
+    
+    #-------------------------------------------
+    def update_fps()
+	frame = @state[:frame]
+	time = @world[:time]
+
+	d_frame = frame - @stats[:fps][:last_frame]
+	d_time = time - @stats[:fps][:last_time]
+	
+	d_time = (d_time > 0.0) ? d_time : 0.001
+
+	if (d_time >= 0.2)
+	    @stats[:fps][:last_frame] = frame
+	    @stats[:fps][:last_time] = time
+	    @stats[:fps][:cur_fps] = (d_frame.to_f / d_time.to_f).to_i
+	end
     end
 end
 
