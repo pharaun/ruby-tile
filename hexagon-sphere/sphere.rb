@@ -31,6 +31,14 @@ Tindices = [
     [6,1,10], [9,0,11], [9,11,2], [9,2,5], [7,2,11]
 ]
 
+Cdata = [
+    [rand, rand, rand], [rand, rand, rand], [rand, rand, rand], [rand, rand, rand],
+    [rand, rand, rand], [rand, rand, rand], [rand, rand, rand], [rand, rand, rand],
+    [rand, rand, rand], [rand, rand, rand], [rand, rand, rand], [rand, rand, rand],
+    [rand, rand, rand], [rand, rand, rand], [rand, rand, rand], [rand, rand, rand],
+    [rand, rand, rand], [rand, rand, rand], [rand, rand, rand], [rand, rand, rand]
+]
+
 #-----------------------------------------------------------
 def Fps
     # FPS
@@ -125,6 +133,8 @@ DrawGLScene = lambda {
 
 	normal = normcrossprod(d1, d2)
 	glNormal(normal)
+
+	glColor(Cdata[i])
 
 	glBegin(GL_TRIANGLES)
 	    glVertex(Vdata[Tindices[i][0]])
