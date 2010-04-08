@@ -42,6 +42,12 @@ Cdata = [
 # Counter for the polygons
 $count = 19
 
+#subdivide
+$div = 2
+
+# Color/wireframe
+$wireframe = true
+
 #-----------------------------------------------------------
 def Fps
     # FPS
@@ -128,27 +134,38 @@ DrawGLScene = lambda {
     glRotate($roty, 0, 1, 0);
     glRotate($rotz, 0, 0, 1);
 
+    if $wireframe
+	glPolygonMode(GL_FRONT, GL_LINE)
+	glPolygonMode(GL_BACK, GL_LINE)
+    else
+	glPolygonMode(GL_FRONT, GL_FILL)
+	glPolygonMode(GL_BACK, GL_FILL)
+    end
+
     # Rendering Code goes here
     0.upto($count) do |i|
 	# Establish the Normals
-	d1 = Array.new
-	d2 = Array.new
-	
-	3.times do |j|
-	    d1.push(Vdata[Tindices[i][0]][j] - Vdata[Tindices[i][1]][j])
-	    d2.push(Vdata[Tindices[i][1]][j] - Vdata[Tindices[i][2]][j])
-	end
-
-	#normal = normcrossprod(d1, d2)
-	#glNormal(normal)
+#	d1 = Array.new
+#	d2 = Array.new
+#	
+#	3.times do |j|
+#	    d1.push(Vdata[Tindices[i][0]][j] - Vdata[Tindices[i][1]][j])
+#	    d2.push(Vdata[Tindices[i][1]][j] - Vdata[Tindices[i][2]][j])
+#	end
+#
+#	normal = normcrossprod(d1, d2)
+#	glNormal(normal)
 
 	glColor(Cdata[i])
 
-	glBegin(GL_TRIANGLES)
-	    glVertex(Vdata[Tindices[i][0]])
-	    glVertex(Vdata[Tindices[i][1]])
-	    glVertex(Vdata[Tindices[i][2]])
-	glEnd()
+#	glBegin(GL_TRIANGLES)
+#	    glVertex(Vdata[Tindices[i][0]])
+#	    glVertex(Vdata[Tindices[i][1]])
+#	    glVertex(Vdata[Tindices[i][2]])
+#	glEnd()
+	subdivide(Vdata[Tindices[i][0]],
+		  Vdata[Tindices[i][1]],
+		  Vdata[Tindices[i][2]], $div)
     end
 
     # Fps
@@ -158,6 +175,51 @@ DrawGLScene = lambda {
     # what just got drawn.
     glutSwapBuffers()
 }
+
+#-----------------------------------------------------------
+def drawtriagle(v1, v2, v3)
+    glBegin(GL_TRIANGLES)
+	glNormal(v1)
+	glVertex(v1)
+	glNormal(v2)
+	glVertex(v2)
+	glNormal(v3)
+	glVertex(v3)
+    glEnd()
+end
+
+#-----------------------------------------------------------
+def subdivide(v1, v2, v3, depth)
+
+    if depth == 0
+	drawtriagle(v1, v2, v3)
+	return
+    end
+
+    v12 = Array.new
+    v23 = Array.new
+    v31 = Array.new
+
+    3.times do |i|
+	v12.push(v1[i] + v2[i])
+	v23.push(v2[i] + v3[i])
+	v31.push(v3[i] + v1[i])
+    end
+
+    v12 = normalize(v12)
+    v23 = normalize(v23)
+    v31 = normalize(v31)
+
+#    drawtriagle(v1, v12, v31)
+#    drawtriagle(v2, v23, v12)
+#    drawtriagle(v3, v31, v23)
+#    drawtriagle(v12, v23, v31)
+    subdivide(v1, v12, v31, depth - 1)
+    subdivide(v2, v23, v12, depth - 1)
+    subdivide(v3, v31, v23, depth - 1)
+    subdivide(v12, v23, v31, depth - 1)
+end
+
 
 #-----------------------------------------------------------
 def normcrossprod(v1, v2) 
@@ -173,10 +235,10 @@ end
 def normalize(v)
     norm = Array.new
 
-    d = Math.sqrt(v[0]*v[1] + v[1]*v[1] + v[2]*v[2])
+    d = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
     if (d == 0.0)
 	puts "Zero length vector"
-	exit
+	return v
     end
 
     norm.push(v[0]/d)
@@ -195,6 +257,14 @@ keyPressed = lambda {|key, x, y|
 	    # If the esc key is pressed, shutdown the window and exit
 	    glutDestroyWindow($window)
 	    exit(0)
+
+	when 32
+	    # Toggle the coloring/wireframe mode
+	    if $wireframe
+		$wireframe = false
+	    else
+		$wireframe = true
+	    end
     end
 }
 
@@ -245,13 +315,25 @@ specialKeyPressed = lambda {|key,x,y|
 	    end
 
 	when GLUT_KEY_HOME
-	    if $count < 19
-		$count += 1
+	    if mod == GLUT_ACTIVE_SHIFT
+		if $div < 4
+		    $div += 1
+		end
+	    else
+		if $count < 19
+		    $count += 1
+		end
 	    end
 
 	when GLUT_KEY_END
-	    if $count > 0
-		$count -= 1
+	    if mod == GLUT_ACTIVE_SHIFT
+		if $div > 0
+		    $div -= 1
+		end
+	    else
+		if $count > 0
+		    $count -= 1
+		end
 	    end
     end
 
