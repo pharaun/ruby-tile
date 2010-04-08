@@ -39,6 +39,9 @@ Cdata = [
     [rand, rand, rand], [rand, rand, rand], [rand, rand, rand], [rand, rand, rand]
 ]
 
+# Counter for the polygons
+$count = 19
+
 #-----------------------------------------------------------
 def Fps
     # FPS
@@ -111,17 +114,22 @@ DrawGLScene = lambda {
     # Clear the Screen and the Depth Buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
+    # Prep stuff
+    glEnable(GL_DEPTH_TEST)
+    glEnable(GL_NORMALIZE)
+
     # Reset the view
     glLoadIdentity()
 
     # Move the camera to the current position as indicated by the user
+    glTranslate($x, $y, $z);
+
     glRotate($rotx, 1, 0, 0);
     glRotate($roty, 0, 1, 0);
     glRotate($rotz, 0, 0, 1);
-    glTranslate($x, $y, $z);
 
     # Rendering Code goes here
-    0.upto(19) do |i|
+    0.upto($count) do |i|
 	# Establish the Normals
 	d1 = Array.new
 	d2 = Array.new
@@ -131,8 +139,8 @@ DrawGLScene = lambda {
 	    d2.push(Vdata[Tindices[i][1]][j] - Vdata[Tindices[i][2]][j])
 	end
 
-	normal = normcrossprod(d1, d2)
-	glNormal(normal)
+	#normal = normcrossprod(d1, d2)
+	#glNormal(normal)
 
 	glColor(Cdata[i])
 
@@ -201,39 +209,49 @@ specialKeyPressed = lambda {|key,x,y|
     case key
 	when GLUT_KEY_UP
 	    if mod == GLUT_ACTIVE_SHIFT
-		$rotx += 1
-	    else
 		$y -= 1
+	    else
+		$rotx += 1
 	    end
 	when GLUT_KEY_DOWN
 	    if mod == GLUT_ACTIVE_SHIFT
-		$rotx -= 1
-	    else
 		$y += 1
+	    else
+		$rotx -= 1
 	    end
 	when GLUT_KEY_LEFT
 	    if mod == GLUT_ACTIVE_SHIFT
-		$roty -= 1
-	    else
 		$x += 1
+	    else
+		$roty -= 1
 	    end
 	when GLUT_KEY_RIGHT
 	    if mod == GLUT_ACTIVE_SHIFT
-		$roty += 1
-	    else
 		$x -= 1
+	    else
+		$roty += 1
 	    end
 	when GLUT_KEY_PAGE_UP
 	    if mod == GLUT_ACTIVE_SHIFT
-		$rotz += 1
-	    else
 		$z += 1
+	    else
+		$rotz += 1
 	    end
 	when GLUT_KEY_PAGE_DOWN
 	    if mod == GLUT_ACTIVE_SHIFT
-		$rotz -= 1
-	    else
 		$z -= 1
+	    else
+		$rotz -= 1
+	    end
+
+	when GLUT_KEY_HOME
+	    if $count < 19
+		$count += 1
+	    end
+
+	when GLUT_KEY_END
+	    if $count > 0
+		$count -= 1
 	    end
     end
 
