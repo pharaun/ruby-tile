@@ -44,6 +44,7 @@ Cdata = [
 
 #subdivide
 $div = 2
+$max_div = 6
 
 # Color/wireframe
 $wireframe = true
@@ -221,35 +222,12 @@ def normalize(v)
     return norm
 end
 
-
-#-----------------------------------------------------------
-def compile_list_a
-    $display_list = Array.new
-
-    5.times do |div|
-	list = glGenLists(1)
-	glNewList(list, GL_COMPILE)
-
-	    0.upto(19) do |i|
-		glColor(Cdata[i])
-
-		subdivide(Vdata[Tindices[i][0]],
-			  Vdata[Tindices[i][1]],
-			  Vdata[Tindices[i][2]], div)
-	    end
-
-	glEndList()
-
-	$display_list.push(list)
-    end
-end
-
 #-----------------------------------------------------------
 def compile_list
     $display_list = Array.new
-    list = glGenLists(5)
+    list = glGenLists($max_div + 1)
 
-    5.times do |div|
+    ($max_div + 1).times do |div|
 	glNewList(list, GL_COMPILE)
 
 	    0.upto(19) do |i|
@@ -335,7 +313,7 @@ specialKeyPressed = lambda {|key,x,y|
 
 	when GLUT_KEY_HOME
 	    if mod == GLUT_ACTIVE_SHIFT
-		if $div < 4
+		if $div < $max_div
 		    $div += 1
 		end
 #	    else
