@@ -40,7 +40,7 @@ Cdata = [
 ]
 
 # Counter for the polygons
-$count = 19
+#$count = 19
 
 #subdivide
 $div = 2
@@ -142,31 +142,8 @@ DrawGLScene = lambda {
 	glPolygonMode(GL_BACK, GL_FILL)
     end
 
-    # Rendering Code goes here
-    0.upto($count) do |i|
-	# Establish the Normals
-#	d1 = Array.new
-#	d2 = Array.new
-#	
-#	3.times do |j|
-#	    d1.push(Vdata[Tindices[i][0]][j] - Vdata[Tindices[i][1]][j])
-#	    d2.push(Vdata[Tindices[i][1]][j] - Vdata[Tindices[i][2]][j])
-#	end
-#
-#	normal = normcrossprod(d1, d2)
-#	glNormal(normal)
-
-	glColor(Cdata[i])
-
-#	glBegin(GL_TRIANGLES)
-#	    glVertex(Vdata[Tindices[i][0]])
-#	    glVertex(Vdata[Tindices[i][1]])
-#	    glVertex(Vdata[Tindices[i][2]])
-#	glEnd()
-	subdivide(Vdata[Tindices[i][0]],
-		  Vdata[Tindices[i][1]],
-		  Vdata[Tindices[i][2]], $div)
-    end
+    # call the display list
+    glCallList($display_list[$div])
 
     # Fps
     Fps()
@@ -209,11 +186,7 @@ def subdivide(v1, v2, v3, depth)
     v12 = normalize(v12)
     v23 = normalize(v23)
     v31 = normalize(v31)
-
-#    drawtriagle(v1, v12, v31)
-#    drawtriagle(v2, v23, v12)
-#    drawtriagle(v3, v31, v23)
-#    drawtriagle(v12, v23, v31)
+    
     subdivide(v1, v12, v31, depth - 1)
     subdivide(v2, v23, v12, depth - 1)
     subdivide(v3, v31, v23, depth - 1)
@@ -246,6 +219,52 @@ def normalize(v)
     norm.push(v[2]/d)
 
     return norm
+end
+
+
+#-----------------------------------------------------------
+def compile_list_a
+    $display_list = Array.new
+
+    5.times do |div|
+	list = glGenLists(1)
+	glNewList(list, GL_COMPILE)
+
+	    0.upto(19) do |i|
+		glColor(Cdata[i])
+
+		subdivide(Vdata[Tindices[i][0]],
+			  Vdata[Tindices[i][1]],
+			  Vdata[Tindices[i][2]], div)
+	    end
+
+	glEndList()
+
+	$display_list.push(list)
+    end
+end
+
+#-----------------------------------------------------------
+def compile_list
+    $display_list = Array.new
+    list = glGenLists(5)
+
+    5.times do |div|
+	glNewList(list, GL_COMPILE)
+
+	    0.upto(19) do |i|
+		glColor(Cdata[i])
+
+		subdivide(Vdata[Tindices[i][0]],
+			  Vdata[Tindices[i][1]],
+			  Vdata[Tindices[i][2]], div)
+	    end
+
+	glEndList()
+
+	$display_list.push(list)
+	list += 1
+    end
 end
 
 
@@ -319,10 +338,10 @@ specialKeyPressed = lambda {|key,x,y|
 		if $div < 4
 		    $div += 1
 		end
-	    else
-		if $count < 19
-		    $count += 1
-		end
+#	    else
+#		if $count < 19
+#		    $count += 1
+#		end
 	    end
 
 	when GLUT_KEY_END
@@ -330,10 +349,10 @@ specialKeyPressed = lambda {|key,x,y|
 		if $div > 0
 		    $div -= 1
 		end
-	    else
-		if $count > 0
-		    $count -= 1
-		end
+#	    else
+#		if $count > 0
+#		    $count -= 1
+#		end
 	    end
     end
 
@@ -386,6 +405,9 @@ glutSpecialFunc(specialKeyPressed)
 
 # Initialize our window.
 InitGL(640, 480)
+
+# Init the display list
+compile_list
 
 # Start Event Processing Engine
 glutMainLoop()
