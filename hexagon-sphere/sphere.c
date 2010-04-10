@@ -26,6 +26,10 @@ int max_div = 6;
 /* The number of our GLUT window */
 int window; 
 
+/* Fps stuff */
+int frame = 0;
+int start_time = 0;
+
 /* Vertices for the sphere thingie */
 #define X .525731112119133606 
 #define Z .850650808352039932
@@ -99,6 +103,19 @@ void subdivide(float *v1, float *v2, float *v3, long depth)
     subdivide(v2, v23, v12, depth-1);
     subdivide(v3, v31, v23, depth-1);
     subdivide(v12, v23, v31, depth-1);
+}
+
+
+/* Calculate and spit out the frame rate */
+void Fps() {
+    frame++;
+    int time = glutGet(GLUT_ELAPSED_TIME);
+    if (time - start_time > 1000) {
+	printf("FPS:%4.2f\n",
+		frame*1000.0/(time-start_time));
+	start_time = time;		
+	frame = 0;
+    }
 }
 
 
@@ -176,6 +193,7 @@ void DrawGLScene()
     }
 
     /* Call the FPS stuff here */
+    Fps();
 
     // swap the buffers to display, since double buffering is used.
     glutSwapBuffers();
