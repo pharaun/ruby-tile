@@ -4,6 +4,10 @@
 require "opengl"
 include Gl,Glu,Glut
 
+# FPS stuff
+$frame = 0
+$start_time = 0
+
 # Default position of the camera
 $x = 0.0
 $y = 0.0
@@ -51,14 +55,13 @@ $wireframe = true
 
 #-----------------------------------------------------------
 def Fps
-    # FPS
-    if ($frame.nil? or $frame >= 1000)
-	puts "FPS: #{$frame / (Time.now - $start_time)}" unless $start_time.nil?
+    $frame += 1
+    time = glutGet(GLUT_ELAPSED_TIME)
 
+    if (time - $start_time > 1000)
+	printf("FPS:%4.2f\n", ($frame*1000/(time-$start_time)))
+	$start_time = time
 	$frame = 0
-	$start_time = Time.now
-    else
-	$frame += 1
     end
 end
 
@@ -333,10 +336,6 @@ specialKeyPressed = lambda {|key,x,y|
 #		end
 	    end
     end
-
-    # Prints out the current position and rotation of the camera to the console
-    puts "x = #{$x}, y = #{$y}, z = #{$z}"
-    puts "rotx = #{$rotx}, roty = #{$roty}, rotz = #{$rotz}"
 }
 
 
