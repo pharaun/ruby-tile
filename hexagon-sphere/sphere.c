@@ -49,35 +49,19 @@ static GLint tindices[20][3] = {
 
 GLfloat cdata[20][3];
 
+#ifdef NOASM
 /* Normalize function */
-/*void normalize(float v[3]) {
+void normalize(float v[3]) {
     GLfloat d = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]); 
     if (d == 0.0) {
 	printf("zero length vector");    
 	return;
     }
     v[0] /= d; v[1] /= d; v[2] /= d; 
-}*/
-void normalize(float v[4]) {
-    __asm__ __volatile__
-	(
-	 "movups %[a], %%xmm0 \n\t"
-	 "movaps %%xmm0, %%xmm2 \n\t"
-	 "mulps %%xmm0, %%xmm0 \n\t"
-	 "movaps %%xmm0, %%xmm1 \n\t"
-	 "shufps $0x4e, %%xmm1, %%xmm0 \n\t"
-	 "addps %%xmm1, %%xmm0 \n\t"
-	 "movaps %%xmm0, %%xmm1 \n\t"
-	 "shufps $0x11, %%xmm1, %%xmm1 \n\t"
-	 "addps %%xmm1, %%xmm0 \n\t"
-	 "rsqrtps %%xmm0, %%xmm0 \n\t"
-	 "mulps %%xmm0, %%xmm2 \n\t"
-	 "movups %%xmm0, %[b] \n\t"
-	 : [b] "=m" (*v)
-	 : [a] "m" (*v)
-	 : "%xmm0", "%xmm1", "%xmm2"
-	);
 }
+#else // SSE version
+extern "C" void normalize(float v[3]);
+#endif
 
 /* Not used anymore, commenting out for now
 void normcrossprod(float v1[3], float v2[3], float out[3]) 
