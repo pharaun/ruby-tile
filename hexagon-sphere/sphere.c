@@ -60,7 +60,7 @@ void normalize(float v[3]) {
     v[0] /= d; v[1] /= d; v[2] /= d; 
 }
 #else // SSE version
-extern "C" void normalize(float v[3]);
+extern void normalize(float v[3]);
 #endif
 
 /* Not used anymore, commenting out for now
