@@ -51,7 +51,7 @@ GLfloat cdata[20][3];
 
 #ifdef NOASM
 /* Normalize function */
-void normalize(float v[3]) {
+void normalize(float v[4]) {
     GLfloat d = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]); 
     if (d == 0.0) {
 	printf("zero length vector");    
@@ -60,7 +60,7 @@ void normalize(float v[3]) {
     v[0] /= d; v[1] /= d; v[2] /= d; 
 }
 #else // SSE version
-extern void normalize(float v[3]);
+extern void normalize(float v[4]);
 #endif
 
 /* Not used anymore, commenting out for now
@@ -88,8 +88,13 @@ void drawtriangle(float *v1, float *v2, float *v3)
 /* subdivision */
 void subdivide(float *v1, float *v2, float *v3, long depth)
 {
-    GLfloat v12[3], v23[3], v31[3];
+    GLfloat v12[4], v23[4], v31[4];
     GLint i;
+
+    /* Set the 4th to zero */
+    v12[4] = 0.0f;
+    v23[4] = 0.0f;
+    v31[4] = 0.0f;
 
     if (depth == 0) {
 	drawtriangle(v1, v2, v3);
