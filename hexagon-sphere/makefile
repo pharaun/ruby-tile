@@ -6,8 +6,8 @@ CC = gcc
 CFLAGS = $(COMPILERFLAGS) $(INCLUDE)
 LIBRARIES = -lX11 -lXi -lXmu -lglut -lGL -lGLU -lm
 
-NASM = nasm
-NASMFLAGS = -felf64
+ASM = yasm
+ASMFLAGS = -f elf64 -a x86 -m amd64 -r raw -p gas
 
 OBJECTS = sphere.o norm.o
 EXECUTABLE = sphere
@@ -19,7 +19,7 @@ all: $(OBJECTS)
 	$(CC) $(CFLAGS) -c $<
 
 %.o: %.asm
-	$(NASM) $(NASMFLAGS) $<
+	$(ASM) $(ASMFLAGS) $<
 
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLE)
