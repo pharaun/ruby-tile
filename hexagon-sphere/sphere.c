@@ -34,20 +34,20 @@ int start_time = 0;
 #define X .525731112119133606 
 #define Z .850650808352039932
 
-static GLfloat vdata[12][3] = {    
+static float vdata[12][3] = {
     {-X, 0.0, Z}, {X, 0.0, Z}, {-X, 0.0, -Z}, {X, 0.0, -Z},    
     {0.0, Z, X}, {0.0, Z, -X}, {0.0, -Z, X}, {0.0, -Z, -X},    
     {Z, X, 0.0}, {-Z, X, 0.0}, {Z, -X, 0.0}, {-Z, -X, 0.0} 
 };
 
-static GLint tindices[20][3] = { 
+static int tindices[20][3] = {
     {0,4,1}, {0,9,4}, {9,5,4}, {4,5,8}, {4,8,1},    
     {8,10,1}, {8,3,10}, {5,3,8}, {5,2,3}, {2,7,3},    
     {7,10,3}, {7,6,10}, {7,11,6}, {11,0,6}, {0,1,6}, 
     {6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11}
 };
 
-GLfloat cdata[20][3];
+static float cdata[20][3];
 
 #ifdef NOASM
 /* Normalize function */
@@ -94,8 +94,10 @@ void drawtriangle(float *v1, float *v2, float *v3)
 /* subdivision */
 void subdivide(float *v1, float *v2, float *v3, long depth)
 {
-    GLfloat v12[4], v23[4], v31[4];
-    GLint i;
+    float v12[4] __attribute__((aligned(16)));
+    float v23[4] __attribute__((aligned(16)));
+    float v31[4] __attribute__((aligned(16)));
+    int i;
 
     /* Set the 4th to zero */
     v12[4] = 0.0f;

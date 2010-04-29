@@ -23,9 +23,12 @@ normalize:
 ##	mov	eax,	vector
 ##	movaps	xmm0,	[eax]
 #       movups	(%rax),	%xmm0
-	movups	(%rdi),	%xmm0
-	movups	(%r8),	%xmm3
-	movups	(%rsi),	%xmm6
+#	movups	(%rdi),	%xmm0
+	movaps	(%rdi),	%xmm0
+#	movups	(%r8),	%xmm3
+	movaps	(%r8),	%xmm3
+#	movups	(%rsi),	%xmm6
+	movaps	(%rsi),	%xmm6
 	
 ##	movaps	xmm2,	xmm0
 #	movaps	%xmm0,	%xmm2
@@ -92,15 +95,18 @@ normalize:
 
 ##	movaps	[eax],	xmm0	
 #       movups %xmm0, (%rdx)
-	movups	%xmm0,	(%rcx)
-	movups	%xmm3,	(%rdx)
+#	movups	%xmm0,	(%rcx)
+	movaps	%xmm0,	(%rcx)
+#	movups	%xmm3,	(%rdx)
+	movaps	%xmm3,	(%rdx)
 # Deferred Vector 3 stuff here
 	movaps	%xmm4,	%xmm6
 	shufps	$0x11,	%xmm4, %xmm4
 	addps	%xmm4,	%xmm6
 	rsqrtps	%xmm6,	%xmm6
 	mulps	%xmm7,	%xmm6
-	movups	%xmm6,	(%rax)
+#	movups	%xmm6,	(%rax)
+	movaps	%xmm6,	(%rax)
 
 #NO_APP
 	leave  
